@@ -1,16 +1,18 @@
 """Example tests demonstrating pytest-threaded usage."""
 
-import pytest
 import time
-from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
+import pytest
+
+from pytest_threaded import concurrent_function_fixture, concurrent_test, generate_tests
 
 # =============================================================================
 # Define fixtures - use @concurrent_function_fixture for function-scoped fixtures
 # =============================================================================
 
+
 @pytest.fixture(scope="function")  # Function scope now works!
-@concurrent_function_fixture          # Register for manual invocation
+@concurrent_function_fixture  # Register for manual invocation
 def shared_resource():
     """A fixture that provides a shared resource."""
     print(f"\n>>> FIXTURE shared_resource: SETUP at {time.time():.2f}")
@@ -20,7 +22,7 @@ def shared_resource():
 
 
 @pytest.fixture(scope="function")  # Function scope now works!
-@concurrent_function_fixture          # Register for manual invocation
+@concurrent_function_fixture  # Register for manual invocation
 def another_fixture():
     """Another fixture."""
     print(f"\n>>> FIXTURE another_fixture: SETUP at {time.time():.2f}")
@@ -32,6 +34,7 @@ def another_fixture():
 # =============================================================================
 # Define tests using the decorator - fixtures work just like normal pytest!
 # =============================================================================
+
 
 @concurrent_test
 def foo(shared_resource):
