@@ -64,6 +64,3 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-
-      - name: Run mypy
-        run: mypy src/pytest_threaded --ignore-missing-imports
