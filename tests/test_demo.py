@@ -1,10 +1,12 @@
+"""Example tests demonstrating pytest-threaded usage."""
+
 import pytest
 import time
-from parallel_runner import parallel_test, parallel_function_fixture, generate_tests
+from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
 
 
 # =============================================================================
-# Define fixtures - use @parallel_fixture for function-scoped fixtures
+# Define fixtures - use @parallel_function_fixture for function-scoped fixtures
 # =============================================================================
 
 @pytest.fixture(scope="function")  # Function scope now works!

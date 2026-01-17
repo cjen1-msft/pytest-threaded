@@ -1,3 +1,5 @@
+"""Core parallel test runner implementation."""
+
 import pytest
 import sys
 import threading
@@ -39,6 +41,37 @@ class ThreadLocalStream:
             redirect.flush()
         else:
             self.original.flush()
+    
+    def isatty(self):
+        return self.original.isatty()
+    
+    def fileno(self):
+        return self.original.fileno()
+    
+    @property
+    def encoding(self):
+        return self.original.encoding
+    
+    @property
+    def errors(self):
+        return getattr(self.original, 'errors', None)
+    
+    @property
+    def name(self):
+        return getattr(self.original, 'name', None)
+    
+    @property
+    def mode(self):
+        return getattr(self.original, 'mode', 'w')
+    
+    def readable(self):
+        return False
+    
+    def writable(self):
+        return True
+    
+    def seekable(self):
+        return False
 
 
 class QueueWriter:
@@ -299,14 +332,17 @@ def dispatch_{name}({params}):
 def make_wait_func(name: str):
     """Create a wait test function that depends on the dispatch fixture."""
     
+    # Avoid doubling the test_ prefix if name already starts with test_
+    test_name = name if name.startswith("test_") else f"test_{name}"
+    
     code = f"""
-def test_{name}(dispatch_{name}):
+def {test_name}(dispatch_{name}):
     __tracebackhide__ = True
     _runner.wait(name)
 """
     local_vars = {"_runner": _runner, "name": name}
     exec(code, local_vars)
-    test_func = local_vars[f"test_{name}"]
+    test_func = local_vars[test_name]
     return test_func
 
 
@@ -358,7 +394,9 @@ def test_all({params}):
     
     # Add wait tests
     for name in _parallel_tests:
-        module_globals[f"test_{name}"] = make_wait_func(name)
+        # Avoid doubling the test_ prefix
+        test_name = name if name.startswith("test_") else f"test_{name}"
+        module_globals[test_name] = make_wait_func(name)
 
 
 # Keep module-level fixture as fallback for imports
