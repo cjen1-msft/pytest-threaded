@@ -198,10 +198,10 @@ _concurrent_function_fixtures: dict[str, Callable] = {}
 def concurrent_function_fixture(func: Callable) -> Callable:
     """
     Decorator that registers a function-scoped fixture for use with concurrent tests.
-    
+
     This allows function-scoped fixtures to work with concurrent tests by
     manually managing their lifecycle outside of pytest's scope rules.
-    
+
     Usage:
         @pytest.fixture(scope="function")  # Function scope works!
         @concurrent_function_fixture          # Must be BELOW @pytest.fixture
@@ -209,7 +209,7 @@ def concurrent_function_fixture(func: Callable) -> Callable:
             print("setup")
             yield {"value": 42}
             print("teardown")
-    
+
     The fixture can still be used normally by non-concurrent pytest tests.
     """
     _concurrent_function_fixtures[func.__name__] = func
@@ -220,9 +220,9 @@ def concurrent_test(func: Callable) -> Callable:
     """
     Decorator that registers a function as a concurrent test.
     The actual dispatch/wait test methods are generated automatically.
-    
+
     Supports pytest fixtures - just add them as function parameters:
-    
+
         @concurrent_test
         def my_test(tmp_path, my_fixture):
             # tmp_path and my_fixture will be resolved by pytest
@@ -266,7 +266,7 @@ def test_dispatch(self, {params}):
 
 def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
     """Create a module-scoped dispatch fixture that manually invokes fixtures and dispatches.
-    
+
     For fixtures decorated with @concurrent_fixture, we manually invoke the generator
     to bypass pytest's scope checking. This allows function-scoped fixtures to work
     with module-scoped dispatch fixtures.
@@ -350,15 +350,15 @@ def generate_tests(module_globals: dict) -> None:
     """
     Generate test functions and inject them into the module namespace.
     Call this at the end of your test file after all @concurrent_test functions.
-    
+
     Args:
         module_globals: Pass globals() from your test module
-    
+
     This injects:
         - dispatch_<name>: Session-scoped fixture that dispatches the test
         - test_all: Test that triggers all dispatch fixtures (ensures concurrency)
         - test_<name>: Waits for and streams the result of each test
-    
+
     NOTE: Fixtures used by @concurrent_test functions should be session or module
     scoped to ensure they stay alive during test execution.
     """
