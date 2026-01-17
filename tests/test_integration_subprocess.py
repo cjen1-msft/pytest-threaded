@@ -27,9 +27,7 @@ def run_pytest(test_code: str, *args, timeout: int = 30) -> subprocess.Completed
     Creates a temporary file with the test code and runs pytest on it.
     Captures output for test assertions and prints it to host terminal.
     """
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", prefix="test_", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", prefix="test_", delete=False) as f:
         f.write(test_code)
         f.flush()
         test_file = f.name
@@ -94,9 +92,7 @@ class TestParallelExecution:
         elapsed = time.time() - start
 
         # Should complete in ~1-2s if parallel, ~3s+ if sequential
-        assert (
-            elapsed < 2.5
-        ), f"Tests took {elapsed:.2f}s - expected <2.5s for parallel execution"
+        assert elapsed < 2.5, f"Tests took {elapsed:.2f}s - expected <2.5s for parallel execution"
         # All tests should pass (3 parallel tests + test_all)
         assert result.returncode == 0, "Tests failed"
         output = result.stdout + result.stderr
@@ -257,9 +253,9 @@ class TestCleanTracebacks:
         assert "my_failing_test" in output, "Test function name not in traceback"
 
         # Should show the assertion
-        assert (
-            "assert x == y" in output or "x should equal y" in output
-        ), "Assertion not visible in traceback"
+        assert "assert x == y" in output or "x should equal y" in output, (
+            "Assertion not visible in traceback"
+        )
 
     def test_exception_traceback_shows_origin(self):
         """Exception raised in test should show original location."""
@@ -475,9 +471,9 @@ class TestSingleTestExecution:
 
         # Should have test_example, NOT test_test_example
         assert "test_example" in output, "test_example not found"
-        assert (
-            "test_test_example" not in output
-        ), "Bug: test name was doubled to 'test_test_example'"
+        assert "test_test_example" not in output, (
+            "Bug: test name was doubled to 'test_test_example'"
+        )
 
     def test_prefixed_name_runs_correctly(self):
         """A parallel test named 'test_foo' should run when pytest test_foo is invoked."""
@@ -553,9 +549,7 @@ class TestStreamingOutput:
         )
 
         # Run single test and measure timing between output lines
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", prefix="test_", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", prefix="test_", delete=False) as f:
             f.write(test_code)
             f.flush()
             test_file = f.name
@@ -593,8 +587,6 @@ class TestStreamingOutput:
 
             assert start_time and end_time, "Output markers not found"
             delay = end_time - start_time
-            assert (
-                0.3 < delay < 0.8
-            ), f"Output not streaming (delay: {delay:.2f}s, expected ~0.5s)"
+            assert 0.3 < delay < 0.8, f"Output not streaming (delay: {delay:.2f}s, expected ~0.5s)"
         finally:
             os.unlink(test_file)

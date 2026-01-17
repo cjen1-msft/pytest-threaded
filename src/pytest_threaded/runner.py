@@ -292,10 +292,7 @@ def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
                     f"    {fname} = next(_gen_{fname})"
                 )
                 cleanup_lines.append(
-                    f"    try:\n"
-                    f"        next(_gen_{fname})\n"
-                    f"    except StopIteration:\n"
-                    f"        pass"
+                    f"    try:\n        next(_gen_{fname})\n    except StopIteration:\n        pass"
                 )
             else:
                 # Request from pytest normally (must be module+ scoped)
@@ -305,14 +302,10 @@ def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
         params = ", ".join(pytest_fixture_names)
         func_args = ", ".join(func_args_parts)
         setup_code = (
-            "\n".join(setup_lines)
-            if setup_lines
-            else "    pass  # no manual fixture setup"
+            "\n".join(setup_lines) if setup_lines else "    pass  # no manual fixture setup"
         )
         cleanup_code = (
-            "\n".join(cleanup_lines)
-            if cleanup_lines
-            else "    pass  # no manual fixture cleanup"
+            "\n".join(cleanup_lines) if cleanup_lines else "    pass  # no manual fixture cleanup"
         )
 
         code = f"""
