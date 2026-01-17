@@ -2,15 +2,15 @@
 
 import pytest
 import time
-from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
+from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
 
 # =============================================================================
-# Define fixtures - use @parallel_function_fixture for function-scoped fixtures
+# Define fixtures - use @concurrent_function_fixture for function-scoped fixtures
 # =============================================================================
 
 @pytest.fixture(scope="function")  # Function scope now works!
-@parallel_function_fixture          # Register for manual invocation
+@concurrent_function_fixture          # Register for manual invocation
 def shared_resource():
     """A fixture that provides a shared resource."""
     print(f"\n>>> FIXTURE shared_resource: SETUP at {time.time():.2f}")
@@ -20,7 +20,7 @@ def shared_resource():
 
 
 @pytest.fixture(scope="function")  # Function scope now works!
-@parallel_function_fixture          # Register for manual invocation
+@concurrent_function_fixture          # Register for manual invocation
 def another_fixture():
     """Another fixture."""
     print(f"\n>>> FIXTURE another_fixture: SETUP at {time.time():.2f}")
@@ -33,7 +33,7 @@ def another_fixture():
 # Define tests using the decorator - fixtures work just like normal pytest!
 # =============================================================================
 
-@parallel_test
+@concurrent_test
 def foo(shared_resource):
     """Test with one fixture."""
     print("Foo running")
@@ -42,7 +42,7 @@ def foo(shared_resource):
     print("Foo done")
 
 
-@parallel_test
+@concurrent_test
 def bar(shared_resource, another_fixture):
     """Test with multiple fixtures."""
     print("Bar running")
@@ -52,7 +52,7 @@ def bar(shared_resource, another_fixture):
     print("Bar done")
 
 
-@parallel_test
+@concurrent_test
 def baz():
     """Test with no fixtures."""
     print("Baz running")

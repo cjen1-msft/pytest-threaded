@@ -1,6 +1,6 @@
 # pytest-threaded
 
-Run pytest tests in parallel using ThreadPoolExecutor.
+Run pytest tests concurrently using ThreadPoolExecutor.
 
 ## Installation
 
@@ -17,14 +17,14 @@ pip install -e ".[dev]"
 
 ```python
 import pytest
-from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
+from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
 @pytest.fixture(scope="function")
-@parallel_function_fixture
+@concurrent_function_fixture
 def my_fixture():
     yield {"value": 42}
 
-@parallel_test
+@concurrent_test
 def my_test(my_fixture):
     print(f"Value: {my_fixture['value']}")
 

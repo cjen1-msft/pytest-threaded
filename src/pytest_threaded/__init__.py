@@ -1,17 +1,17 @@
-"""pytest-threaded: Run pytest tests in parallel using ThreadPoolExecutor."""
+"""pytest-threaded: Run pytest tests concurrently using ThreadPoolExecutor."""
 
 from pytest_threaded.runner import (
-    parallel_test,
-    parallel_function_fixture,
+    concurrent_test,
+    concurrent_function_fixture,
     generate_tests,
-    ParallelTestRunner,
+    ConcurrentTestRunner,
 )
 
 __version__ = "0.1.0"
 
 __all__ = [
-    "parallel_test",
-    "parallel_function_fixture",
+    "concurrent_test",
+    "concurrent_function_fixture",
     "generate_tests",
-    "ParallelTestRunner",
+    "ConcurrentTestRunner",
 ]

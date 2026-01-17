@@ -77,17 +77,17 @@ class TestParallelExecution:
         """Three 1-second tests should complete in ~1s, not ~3s."""
         test_code = textwrap.dedent('''
             import time
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def slow_a():
                 time.sleep(1)
             
-            @parallel_test
+            @concurrent_test
             def slow_b():
                 time.sleep(1)
             
-            @parallel_test
+            @concurrent_test
             def slow_c():
                 time.sleep(1)
             
@@ -112,13 +112,13 @@ class TestIndividualPassFail:
     def test_mixed_pass_fail(self):
         """One passing, one failing test should show individual results."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def passing():
                 assert True
             
-            @parallel_test
+            @concurrent_test
             def failing():
                 assert False, "intentional failure"
             
@@ -143,13 +143,13 @@ class TestIndividualPassFail:
     def test_all_passing(self):
         """All tests pass - should exit 0."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def test_a():
                 assert True
             
-            @parallel_test
+            @concurrent_test
             def test_b():
                 assert 1 + 1 == 2
             
@@ -165,13 +165,13 @@ class TestIndividualPassFail:
     def test_all_failing(self):
         """All tests fail - should exit 1 with all failures reported."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def fail_a():
                 assert False, "fail a"
             
-            @parallel_test
+            @concurrent_test
             def fail_b():
                 assert False, "fail b"
             
@@ -191,15 +191,15 @@ class TestThreadIsolatedOutput:
         """Each test's output should appear as a contiguous block, not interleaved."""
         test_code = textwrap.dedent('''
             import time
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def alpha():
                 for i in range(5):
                     print(f"ALPHA:{i}")
                     time.sleep(0.05)
             
-            @parallel_test
+            @concurrent_test
             def beta():
                 for i in range(5):
                     print(f"BETA:{i}")
@@ -230,9 +230,9 @@ class TestCleanTracebacks:
     def test_traceback_shows_test_code(self):
         """Traceback should include the test function, not just runner internals."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def my_failing_test():
                 x = 1
                 y = 2
@@ -255,9 +255,9 @@ class TestCleanTracebacks:
     def test_exception_traceback_shows_origin(self):
         """Exception raised in test should show original location."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def exception_test():
                 def inner_func():
                     raise ValueError("error from inner_func")
@@ -278,9 +278,9 @@ class TestCleanTracebacks:
     def test_traceback_excludes_runner_internals(self):
         """Traceback should not be cluttered with runner.py internals."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def simple_failure():
                 raise RuntimeError("simple error")
             
@@ -306,14 +306,14 @@ class TestFixtureSupport:
         """Fixture value should be correctly passed to test."""
         test_code = textwrap.dedent('''
             import pytest
-            from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
+            from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
             
             @pytest.fixture(scope="function")
-            @parallel_function_fixture
+            @concurrent_function_fixture
             def my_fixture():
                 yield {"value": 42}
             
-            @parallel_test
+            @concurrent_test
             def test_uses_fixture(my_fixture):
                 print(f"FIXTURE_VALUE:{my_fixture['value']}")
                 assert my_fixture["value"] == 42
@@ -329,16 +329,16 @@ class TestFixtureSupport:
         """Fixture setup and teardown should both execute."""
         test_code = textwrap.dedent('''
             import pytest
-            from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
+            from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
             
             @pytest.fixture(scope="function")
-            @parallel_function_fixture
+            @concurrent_function_fixture
             def tracked_fixture():
                 print("FIXTURE:SETUP")
                 yield "resource"
                 print("FIXTURE:TEARDOWN")
             
-            @parallel_test
+            @concurrent_test
             def test_with_tracked(tracked_fixture):
                 print(f"FIXTURE:USING:{tracked_fixture}")
                 assert tracked_fixture == "resource"
@@ -358,19 +358,19 @@ class TestFixtureSupport:
         """Test can use multiple fixtures."""
         test_code = textwrap.dedent('''
             import pytest
-            from pytest_threaded import parallel_test, parallel_function_fixture, generate_tests
+            from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
             
             @pytest.fixture(scope="function")
-            @parallel_function_fixture
+            @concurrent_function_fixture
             def fixture_a():
                 yield "A"
             
             @pytest.fixture(scope="function")
-            @parallel_function_fixture
+            @concurrent_function_fixture
             def fixture_b():
                 yield "B"
             
-            @parallel_test
+            @concurrent_test
             def test_multi(fixture_a, fixture_b):
                 print(f"VALUES:{fixture_a}:{fixture_b}")
                 assert fixture_a == "A"
@@ -386,9 +386,9 @@ class TestFixtureSupport:
     def test_no_fixtures(self):
         """Test without fixtures should work."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def no_fixture_test():
                 print("NO_FIXTURES_NEEDED")
                 assert True
@@ -407,13 +407,13 @@ class TestSingleTestExecution:
     def test_run_single_test(self):
         """Running pytest test_foo should only run that test."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def selected():
                 print("SELECTED_RAN")
             
-            @parallel_test
+            @concurrent_test
             def not_selected():
                 print("NOT_SELECTED_RAN")
             
@@ -436,9 +436,9 @@ class TestSingleTestExecution:
     def test_prefixed_name_not_doubled(self):
         """A parallel test named 'test_foo' should become 'test_foo', not 'test_test_foo'."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def test_example():
                 print("TEST_EXAMPLE_RAN")
             
@@ -455,14 +455,14 @@ class TestSingleTestExecution:
     def test_prefixed_name_runs_correctly(self):
         """A parallel test named 'test_foo' should run when pytest test_foo is invoked."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def test_widget():
                 print("WIDGET_TEST_RAN")
                 assert True
             
-            @parallel_test  
+            @concurrent_test  
             def test_gadget():
                 print("GADGET_TEST_RAN")
                 assert True
@@ -485,9 +485,9 @@ class TestStreamingOutput:
     def test_output_appears(self):
         """Test output should appear in pytest output."""
         test_code = textwrap.dedent('''
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def prints_stuff():
                 print("LINE_ONE")
                 print("LINE_TWO")
@@ -508,9 +508,9 @@ class TestStreamingOutput:
         """For a single test, output should stream as it runs, not buffer until completion."""
         test_code = textwrap.dedent('''
             import time
-            from pytest_threaded import parallel_test, generate_tests
+            from pytest_threaded import concurrent_test, generate_tests
             
-            @parallel_test
+            @concurrent_test
             def slow_printer():
                 print("STREAM_START", flush=True)
                 time.sleep(0.5)

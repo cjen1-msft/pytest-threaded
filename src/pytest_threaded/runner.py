@@ -1,4 +1,4 @@
-"""Core parallel test runner implementation."""
+"""Core concurrent test runner implementation."""
 
 import pytest
 import sys
@@ -105,8 +105,8 @@ class _TestResult:
     done: threading.Event = field(default_factory=threading.Event)
 
 
-class ParallelTestRunner:
-    """Manages parallel test execution with dispatch/wait pattern."""
+class ConcurrentTestRunner:
+    """Manages concurrent test execution with dispatch/wait pattern."""
     
     _instance = None
     
@@ -186,44 +186,44 @@ class ParallelTestRunner:
 
 
 # Global runner
-_runner = ParallelTestRunner(max_workers=4)
+_runner = ConcurrentTestRunner(max_workers=4)
 
-# Registry for parallel tests
-_parallel_tests: dict[str, tuple[Callable, list[str]]] = {}
+# Registry for concurrent tests
+_concurrent_tests: dict[str, tuple[Callable, list[str]]] = {}
 
-# Registry for parallel function fixtures (stores raw generator functions)
-_parallel_function_fixtures: dict[str, Callable] = {}
+# Registry for concurrent function fixtures (stores raw generator functions)
+_concurrent_function_fixtures: dict[str, Callable] = {}
 
 
-def parallel_function_fixture(func: Callable) -> Callable:
+def concurrent_function_fixture(func: Callable) -> Callable:
     """
-    Decorator that registers a function-scoped fixture for use with parallel tests.
+    Decorator that registers a function-scoped fixture for use with concurrent tests.
     
-    This allows function-scoped fixtures to work with parallel tests by
+    This allows function-scoped fixtures to work with concurrent tests by
     manually managing their lifecycle outside of pytest's scope rules.
     
     Usage:
         @pytest.fixture(scope="function")  # Function scope works!
-        @parallel_function_fixture          # Must be BELOW @pytest.fixture
+        @concurrent_function_fixture          # Must be BELOW @pytest.fixture
         def my_fixture():
             print("setup")
             yield {"value": 42}
             print("teardown")
     
-    The fixture can still be used normally by non-parallel pytest tests.
+    The fixture can still be used normally by non-concurrent pytest tests.
     """
-    _parallel_function_fixtures[func.__name__] = func
+    _concurrent_function_fixtures[func.__name__] = func
     return func
 
 
-def parallel_test(func: Callable) -> Callable:
+def concurrent_test(func: Callable) -> Callable:
     """
-    Decorator that registers a function as a parallel test.
+    Decorator that registers a function as a concurrent test.
     The actual dispatch/wait test methods are generated automatically.
     
     Supports pytest fixtures - just add them as function parameters:
     
-        @parallel_test
+        @concurrent_test
         def my_test(tmp_path, my_fixture):
             # tmp_path and my_fixture will be resolved by pytest
             # and passed to the function
@@ -233,7 +233,7 @@ def parallel_test(func: Callable) -> Callable:
     # Get the fixture names from the function signature
     sig = inspect.signature(func)
     fixture_names = list(sig.parameters.keys())
-    _parallel_tests[name] = (func, fixture_names)
+    _concurrent_tests[name] = (func, fixture_names)
     return func
 
 
@@ -267,13 +267,13 @@ def test_dispatch(self, {params}):
 def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
     """Create a module-scoped dispatch fixture that manually invokes fixtures and dispatches.
     
-    For fixtures decorated with @parallel_fixture, we manually invoke the generator
+    For fixtures decorated with @concurrent_fixture, we manually invoke the generator
     to bypass pytest's scope checking. This allows function-scoped fixtures to work
     with module-scoped dispatch fixtures.
     """
     
     if fixture_names:
-        # Build code that manually invokes parallel function fixtures
+        # Build code that manually invokes concurrent function fixtures
         # and passes their values to the test function
         setup_lines = []
         cleanup_lines = []
@@ -281,10 +281,10 @@ def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
         pytest_fixture_names = []
         
         for fname in fixture_names:
-            if fname in _parallel_function_fixtures:
+            if fname in _concurrent_function_fixtures:
                 # Manually invoke the fixture generator
                 setup_lines.append(
-                    f"    _gen_{fname} = _parallel_function_fixtures['{fname}']()\n"
+                    f"    _gen_{fname} = _concurrent_function_fixtures['{fname}']()\n"
                     f"    {fname} = next(_gen_{fname})"
                 )
                 cleanup_lines.append(
@@ -315,7 +315,7 @@ def dispatch_{name}({params}):
             "_runner": _runner, 
             "func": func, 
             "pytest": pytest,
-            "_parallel_function_fixtures": _parallel_function_fixtures,
+            "_concurrent_function_fixtures": _concurrent_function_fixtures,
         }
         exec(code, local_vars)
         dispatch_fixture = local_vars[f"dispatch_{name}"]
@@ -349,20 +349,20 @@ def {test_name}(dispatch_{name}):
 def generate_tests(module_globals: dict) -> None:
     """
     Generate test functions and inject them into the module namespace.
-    Call this at the end of your test file after all @parallel_test functions.
+    Call this at the end of your test file after all @concurrent_test functions.
     
     Args:
         module_globals: Pass globals() from your test module
     
     This injects:
         - dispatch_<name>: Session-scoped fixture that dispatches the test
-        - test_all: Test that triggers all dispatch fixtures (ensures parallelism)
+        - test_all: Test that triggers all dispatch fixtures (ensures concurrency)
         - test_<name>: Waits for and streams the result of each test
     
-    NOTE: Fixtures used by @parallel_test functions should be session or module
+    NOTE: Fixtures used by @concurrent_test functions should be session or module
     scoped to ensure they stay alive during test execution.
     """
-    if not _parallel_tests:
+    if not _concurrent_tests:
         return
     
     # Add cleanup fixture
@@ -376,16 +376,16 @@ def generate_tests(module_globals: dict) -> None:
     
     # Add dispatch fixtures
     dispatch_fixture_names = []
-    for name, (func, fixture_names) in _parallel_tests.items():
+    for name, (func, fixture_names) in _concurrent_tests.items():
         fixture_name = f"dispatch_{name}"
         dispatch_fixture_names.append(fixture_name)
         module_globals[fixture_name] = make_dispatch_fixture(name, func, fixture_names)
     
-    # Add test_all that depends on all dispatch fixtures (triggers parallel dispatch)
+    # Add test_all that depends on all dispatch fixtures (triggers concurrent dispatch)
     params = ", ".join(dispatch_fixture_names)
     code = f"""
 def test_all({params}):
-    '''Triggers all dispatch fixtures to start parallel execution.'''
+    '''Triggers all dispatch fixtures to start concurrent execution.'''
     pass
 """
     exec(code, {})
@@ -393,7 +393,7 @@ def test_all({params}):
     module_globals["test_all"].__name__ = "test_all"
     
     # Add wait tests
-    for name in _parallel_tests:
+    for name in _concurrent_tests:
         # Avoid doubling the test_ prefix
         test_name = name if name.startswith("test_") else f"test_{name}"
         module_globals[test_name] = make_wait_func(name)
