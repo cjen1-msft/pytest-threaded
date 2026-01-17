@@ -24,6 +24,7 @@ class ThreadLocalStream:
     If the current thread has set a redirect, write there.
     Otherwise, write to the original stream.
     """
+
     def __init__(self, original, attr_name):
         self.original = original
         self.attr_name = attr_name
@@ -54,15 +55,15 @@ class ThreadLocalStream:
 
     @property
     def errors(self):
-        return getattr(self.original, 'errors', None)
+        return getattr(self.original, "errors", None)
 
     @property
     def name(self):
-        return getattr(self.original, 'name', None)
+        return getattr(self.original, "name", None)
 
     @property
     def mode(self):
-        return getattr(self.original, 'mode', 'w')
+        return getattr(self.original, "mode", "w")
 
     def readable(self):
         return False
@@ -90,13 +91,14 @@ class QueueWriter:
 
 
 # Install thread-local streams once at module load
-sys.stdout = ThreadLocalStream(_original_stdout, 'stdout_redirect')
-sys.stderr = ThreadLocalStream(_original_stderr, 'stderr_redirect')
+sys.stdout = ThreadLocalStream(_original_stdout, "stdout_redirect")
+sys.stderr = ThreadLocalStream(_original_stderr, "stderr_redirect")
 
 
 @dataclass
 class _TestResult:
     """Stores the result of a dispatched test."""
+
     future: Any = None
     output_queue: queue.Queue = field(default_factory=queue.Queue)
     passed: bool = False
@@ -132,6 +134,7 @@ class ConcurrentTestRunner:
                 result.passed = True
             except Exception as e:
                 import sys
+
                 result.error = e
                 # Capture original traceback, but skip the run_test wrapper frame
                 tb = sys.exc_info()[2]
@@ -256,6 +259,7 @@ def test_dispatch(self, {params}):
         exec(code, local_vars)
         test_dispatch = local_vars["test_dispatch"]
     else:
+
         def test_dispatch(self):
             _runner.dispatch(name, func)
 
@@ -300,8 +304,16 @@ def make_dispatch_fixture(name: str, func: Callable, fixture_names: list[str]):
 
         params = ", ".join(pytest_fixture_names)
         func_args = ", ".join(func_args_parts)
-        setup_code = "\n".join(setup_lines) if setup_lines else "    pass  # no manual fixture setup"
-        cleanup_code = "\n".join(cleanup_lines) if cleanup_lines else "    pass  # no manual fixture cleanup"
+        setup_code = (
+            "\n".join(setup_lines)
+            if setup_lines
+            else "    pass  # no manual fixture setup"
+        )
+        cleanup_code = (
+            "\n".join(cleanup_lines)
+            if cleanup_lines
+            else "    pass  # no manual fixture cleanup"
+        )
 
         code = f"""
 @pytest.fixture(scope="module")
@@ -320,10 +332,12 @@ def dispatch_{name}({params}):
         exec(code, local_vars)
         dispatch_fixture = local_vars[f"dispatch_{name}"]
     else:
+
         @pytest.fixture(scope="module")
         def dispatch_fixture():
             _runner.dispatch(name, func)
             yield name
+
         dispatch_fixture.__name__ = f"dispatch_{name}"
 
     return dispatch_fixture
@@ -367,11 +381,13 @@ def generate_tests(module_globals: dict) -> None:
 
     # Add cleanup fixture
     if "_cleanup_parallel_runner" not in module_globals:
+
         @pytest.fixture(scope="session", autouse=True)
         def _cleanup_parallel_runner():
             """Cleanup fixture to shutdown the executor after all tests."""
             yield
             _runner.shutdown()
+
         module_globals["_cleanup_parallel_runner"] = _cleanup_parallel_runner
 
     # Add dispatch fixtures

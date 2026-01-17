@@ -28,10 +28,7 @@ def run_pytest(test_code: str, *args, timeout: int = 30) -> subprocess.Completed
     Captures output for test assertions and prints it to host terminal.
     """
     with tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix=".py",
-        prefix="test_",
-        delete=False
+        mode="w", suffix=".py", prefix="test_", delete=False
     ) as f:
         f.write(test_code)
         f.flush()
@@ -71,7 +68,8 @@ class TestParallelExecution:
 
     def test_parallel_timing(self):
         """Three 1-second tests should complete in ~1s, not ~3s."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import time
             from pytest_threaded import concurrent_test, generate_tests
 
@@ -88,14 +86,17 @@ class TestParallelExecution:
                 time.sleep(1)
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         start = time.time()
         result = run_pytest(test_code)
         elapsed = time.time() - start
 
         # Should complete in ~1-2s if parallel, ~3s+ if sequential
-        assert elapsed < 2.5, f"Tests took {elapsed:.2f}s - expected <2.5s for parallel execution"
+        assert (
+            elapsed < 2.5
+        ), f"Tests took {elapsed:.2f}s - expected <2.5s for parallel execution"
         # All tests should pass (3 parallel tests + test_all)
         assert result.returncode == 0, "Tests failed"
         output = result.stdout + result.stderr
@@ -107,7 +108,8 @@ class TestIndividualPassFail:
 
     def test_mixed_pass_fail(self):
         """One passing, one failing test should show individual results."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -119,7 +121,8 @@ class TestIndividualPassFail:
                 assert False, "intentional failure"
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
 
@@ -138,7 +141,8 @@ class TestIndividualPassFail:
 
     def test_all_passing(self):
         """All tests pass - should exit 0."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -150,7 +154,8 @@ class TestIndividualPassFail:
                 assert 1 + 1 == 2
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 0
@@ -160,7 +165,8 @@ class TestIndividualPassFail:
 
     def test_all_failing(self):
         """All tests fail - should exit 1 with all failures reported."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -172,7 +178,8 @@ class TestIndividualPassFail:
                 assert False, "fail b"
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 1
@@ -185,7 +192,8 @@ class TestThreadIsolatedOutput:
 
     def test_output_not_interleaved(self):
         """Each test's output should appear as a contiguous block, not interleaved."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import time
             from pytest_threaded import concurrent_test, generate_tests
 
@@ -202,7 +210,8 @@ class TestThreadIsolatedOutput:
                     time.sleep(0.05)
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 0, "Tests failed"
@@ -213,10 +222,10 @@ class TestThreadIsolatedOutput:
         # Once we see BETA, we should never see ALPHA again
         seen_beta = False
 
-        for line in output.split('\n'):
-            if 'ALPHA:' in line:
+        for line in output.split("\n"):
+            if "ALPHA:" in line:
                 assert not seen_beta, "Output is interleaved! Saw ALPHA after BETA"
-            elif 'BETA:' in line:
+            elif "BETA:" in line:
                 seen_beta = True
 
 
@@ -225,7 +234,8 @@ class TestCleanTracebacks:
 
     def test_traceback_shows_test_code(self):
         """Traceback should include the test function, not just runner internals."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -235,7 +245,8 @@ class TestCleanTracebacks:
                 assert x == y, "x should equal y"
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 1
@@ -246,11 +257,14 @@ class TestCleanTracebacks:
         assert "my_failing_test" in output, "Test function name not in traceback"
 
         # Should show the assertion
-        assert "assert x == y" in output or "x should equal y" in output, "Assertion not visible in traceback"
+        assert (
+            "assert x == y" in output or "x should equal y" in output
+        ), "Assertion not visible in traceback"
 
     def test_exception_traceback_shows_origin(self):
         """Exception raised in test should show original location."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -260,7 +274,8 @@ class TestCleanTracebacks:
                 inner_func()
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 1
@@ -273,7 +288,8 @@ class TestCleanTracebacks:
 
     def test_traceback_excludes_runner_internals(self):
         """Traceback should not be cluttered with runner.py internals."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -281,7 +297,8 @@ class TestCleanTracebacks:
                 raise RuntimeError("simple error")
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         output = result.stdout + result.stderr
@@ -300,7 +317,8 @@ class TestFixtureSupport:
 
     def test_fixture_value_passed(self):
         """Fixture value should be correctly passed to test."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import pytest
             from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
@@ -315,7 +333,8 @@ class TestFixtureSupport:
                 assert my_fixture["value"] == 42
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 0, "Test failed"
@@ -323,7 +342,8 @@ class TestFixtureSupport:
 
     def test_fixture_setup_teardown(self):
         """Fixture setup and teardown should both execute."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import pytest
             from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
@@ -340,7 +360,8 @@ class TestFixtureSupport:
                 assert tracked_fixture == "resource"
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         output = result.stdout
@@ -352,7 +373,8 @@ class TestFixtureSupport:
 
     def test_multiple_fixtures(self):
         """Test can use multiple fixtures."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import pytest
             from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
@@ -373,7 +395,8 @@ class TestFixtureSupport:
                 assert fixture_b == "B"
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 0, "Test failed"
@@ -381,7 +404,8 @@ class TestFixtureSupport:
 
     def test_no_fixtures(self):
         """Test without fixtures should work."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -390,7 +414,8 @@ class TestFixtureSupport:
                 assert True
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         assert result.returncode == 0
@@ -402,7 +427,8 @@ class TestSingleTestExecution:
 
     def test_run_single_test(self):
         """Running pytest test_foo should only run that test."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -414,7 +440,8 @@ class TestSingleTestExecution:
                 print("NOT_SELECTED_RAN")
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         # Run only test_selected using -k filter
         result = run_pytest(test_code, "-k", "test_selected")
@@ -431,7 +458,8 @@ class TestSingleTestExecution:
 
     def test_prefixed_name_not_doubled(self):
         """A parallel test named 'test_foo' should become 'test_foo', not 'test_test_foo'."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -439,18 +467,22 @@ class TestSingleTestExecution:
                 print("TEST_EXAMPLE_RAN")
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code, "--collect-only")
         output = result.stdout + result.stderr
 
         # Should have test_example, NOT test_test_example
         assert "test_example" in output, "test_example not found"
-        assert "test_test_example" not in output, "Bug: test name was doubled to 'test_test_example'"
+        assert (
+            "test_test_example" not in output
+        ), "Bug: test name was doubled to 'test_test_example'"
 
     def test_prefixed_name_runs_correctly(self):
         """A parallel test named 'test_foo' should run when pytest test_foo is invoked."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -464,7 +496,8 @@ class TestSingleTestExecution:
                 assert True
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         # Run only test_widget
         result = run_pytest(test_code, "-k", "test_widget and not gadget")
@@ -480,7 +513,8 @@ class TestStreamingOutput:
 
     def test_output_appears(self):
         """Test output should appear in pytest output."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             from pytest_threaded import concurrent_test, generate_tests
 
             @concurrent_test
@@ -490,7 +524,8 @@ class TestStreamingOutput:
                 print("LINE_THREE")
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         result = run_pytest(test_code)
         output = result.stdout
@@ -502,7 +537,8 @@ class TestStreamingOutput:
 
     def test_single_test_output_streams(self):
         """For a single test, output should stream as it runs, not buffer until completion."""
-        test_code = textwrap.dedent('''
+        test_code = textwrap.dedent(
+            """
             import time
             from pytest_threaded import concurrent_test, generate_tests
 
@@ -513,10 +549,13 @@ class TestStreamingOutput:
                 print("STREAM_END", flush=True)
 
             generate_tests(globals())
-        ''')
+        """
+        )
 
         # Run single test and measure timing between output lines
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", prefix="test_", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", prefix="test_", delete=False
+        ) as f:
             f.write(test_code)
             f.flush()
             test_file = f.name
@@ -526,8 +565,20 @@ class TestStreamingOutput:
             env["PYTHONPATH"] = f"{PROJECT_ROOT / 'src'}:{env.get('PYTHONPATH', '')}"
 
             process = subprocess.Popen(
-                [sys.executable, "-m", "pytest", test_file, "-v", "-s", "-k", "slow_printer"],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    test_file,
+                    "-v",
+                    "-s",
+                    "-k",
+                    "slow_printer",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env,
             )
 
             start_time = end_time = None
@@ -542,6 +593,8 @@ class TestStreamingOutput:
 
             assert start_time and end_time, "Output markers not found"
             delay = end_time - start_time
-            assert 0.3 < delay < 0.8, f"Output not streaming (delay: {delay:.2f}s, expected ~0.5s)"
+            assert (
+                0.3 < delay < 0.8
+            ), f"Output not streaming (delay: {delay:.2f}s, expected ~0.5s)"
         finally:
             os.unlink(test_file)
