@@ -1,9 +1,10 @@
 """Example tests demonstrating pytest-threaded usage."""
 
-import pytest
 import time
-from pytest_threaded import concurrent_test, concurrent_function_fixture, generate_tests
 
+import pytest
+
+from pytest_threaded import concurrent_function_fixture, concurrent_test, generate_tests
 
 # =============================================================================
 # Define fixtures - use @concurrent_function_fixture for function-scoped fixtures
